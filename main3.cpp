@@ -15,7 +15,18 @@ unsigned long long convert_date(const char *);
 Node *TST_root=NULL;
 set<mail*,length_compare> lengthset;
 
-bool add(struct mail *M){
+void TOLOW(string &s){
+	for(int i=0;i<s.length();i++){
+		if(s[i]<='Z' && s[i]>='A')s[i]+=32;
+	}
+}
+void TOLOW(char *s){
+	while(*s){
+		if(*s<='Z' && *s>='A')*s+=32;
+		s++;
+	}
+}
+int add(struct mail *M){
 	char path[32];
 	cin >> path;
 	// cout <<"WTF"<<path <<"asd"<<'\n' <<"fu";
@@ -24,42 +35,73 @@ bool add(struct mail *M){
 	//cout << f.is_open();
 	if(!f.is_open())return 0;//read file fail
 	char trash[64];
-	
+
+	M->length=0;
+
 	f >> trash;//from
 	f >> M->from;
+	TOLOW(M->from);
+	//M->length+=M->from.length();
 	// cout <<"sender "<< M->from << endl;
 	
 	f >> trash;//date
 	f.getline(trash,64);
+	
+	//M->length+=strlen(trash)-5;
+	
 	M->date=convert_date(trash);
 	//convert date to number
 	// cout<<"date " << M->date << endl;
 
 	f >>trash;//ID
 	f >>M->id;
+	
+	//for(int i=M->id;i!=0;i/=10)M->length++;
 	// cout <<"id "<< M->id << endl;
-	if(container.find(M->id)!=container.end())return 0;
+	auto z=container.find(M->id);
+	if(z!=container.end()){
+		if (z->second->currently_valid==1)return 0;
+		else {
+			return 2;
+		};
+	}
 	f >>trash;
 	f.ignore();
 	getline(f,M->subject);
+	TOLOW(M->subject);
 	// cout <<"subject "<< M->subject<<endl;
 
 	f >>trash;//To
 	f >>M->to;
+	TOLOW(M->to);
+	//M->length+=M->to.length();
  	// cout << M->to << " to\n";
 
-	M->length=0;
+	
 	string temp;
-	TST_insert(&TST_root,M->from.c_str(),M);
-	TST_insert(&TST_root,M->to.c_str(),M);
-	TST_insert(&TST_root,M->subject.c_str(),M);
+	//TST_insert(&TST_root,M->from.c_str(),M);
+	//TST_insert(&TST_root,M->to.c_str(),M);
+
+	char splitsb[128];
+	strncpy(splitsb,M->subject.c_str(),128);
+	for(int i=0;i<M->subject.length();i++){
+		int j=i;
+		while(splitsb[j]!=' ' && splitsb[j]!='\0')++j;
+		splitsb[j]='\0';
+		TST_insert(&TST_root,splitsb+i,M);
+		//M->length+=j-i;
+		i=j;
+	}
+	//TST_insert(&TST_root,M->subject.c_str(),M);
+	f>>trash;
 	while(getline(f,temp)){
 		int i=0,j=0;
 		while(j<temp.length()){
-			while(isalpha(temp[j]) || isdigit(temp[j]))j++;
+			while(isalnum(temp[j]))j++;
 			if(i!=j){
 				//this is segment of content
 				string inserting_element=string(temp.begin()+i,temp.begin()+j);
+				TOLOW(inserting_element);
 				//cout << "inserted " << inserting_element << endl;
 				// M->content.insert(inserting_element);
 				TST_insert(&TST_root,inserting_element.c_str(),M);
@@ -73,13 +115,38 @@ bool add(struct mail *M){
 	f.close();
 	return 1;
 }
+void intersec(set<mail*,id_compare>&a,set<mail*,id_compare>&b,set<mail*,id_compare>&c){
+	auto i=a.begin();
+	auto j=b.begin();
+	while(i!=a.end() && j!=b.end()){
+		if((*i)->id > (*j)->id)j++;
+		else if((*i)->id < (*j)->id)i++;
+		else {c.insert(*i);i++,j++;}
+	}
+	return ;
+}
+void uni(set<mail*,id_compare>&a,set<mail*,id_compare>&b,set<mail*,id_compare>&c){
+	c=a;
+	for(auto t:b){
+		c.insert(t);
+	}
+	return;
+}
+void diff(set<mail*,id_compare>&a,set<mail*,id_compare>&b,set<mail*,id_compare>&c){
+	// a/b
+	c=a;
+	for(auto t:b){
+		c.erase(t);
+	}
+}
 set<mail*,id_compare> evaluate(vector<string> &post){
 	stack< set<mail*,id_compare> >num;
+	//for(auto k:post)cout << k <<"_ ";
 	//cout << "fuck";
 	for(string &seg:post){
 		//assert(seg!="");
 		if(seg=="")continue;
-		if(isdigit(seg[0]) || isalpha(seg[0]) ){
+		if(isalnum(seg[0])){
 			Node* ss=searchTST(TST_root,seg.c_str());
 			if(ss==NULL){
 				//cout << "??"<<seg.c_str()<<"??";
@@ -92,26 +159,33 @@ set<mail*,id_compare> evaluate(vector<string> &post){
 			//assert(prec.find(seg)!=prec.end());
 
 			if(seg=="!"){
-				set<mail*,id_compare>::iterator itr;
 				set<mail*,id_compare> temp;
-				set_difference(allid.begin(),allid.end(),
-				num.top().begin(),num.top().end(),std::inserter(temp,temp.begin()));
+				//set_difference(allid.begin(),allid.end(),
+				//num.top().begin(),num.top().end(),std::inserter(temp,temp.begin()));
+				diff(allid,num.top(),temp);
 				num.top()=temp;
 				//else assert(seg=="u+");
 			}
 			else if(seg=="&" || seg=="|"){
-				//assert(num.size()>=2);
+				assert(num.size()>=2);
 				set<mail*,id_compare> a=num.top();
 				num.pop();
 				set<mail*,id_compare> b=num.top();
 				num.pop();
+				/*for (auto k:a)cout <<k<<"* ";
+				for (auto k:b)cout <<k<<"@ ";*/
 				if(seg=="&"){
 					num.push(set<mail*,id_compare>());
-					set_intersection(a.begin(),a.end(),b.begin(),b.end(),std::inserter(num.top(),num.top().begin()));
+					// vector<mail*>wtf;
+					// wtf.resize(100);
+					intersec(a,b,num.top());
+					//set_intersection(a.begin(),a.end(),b.begin(),b.end(),std::inserter(num.top(),num.top().begin()));
+					//for (auto k:num.top())cout <<k->id<<"@* ";
 				}
 				else {
 					num.push(set<mail*,id_compare>());
-					set_union(a.begin(),a.end(),b.begin(),b.end(),std::inserter(num.top(),num.top().begin()));
+					uni(a,b,num.top());
+					//set_union(a.begin(),a.end(),b.begin(),b.end(),std::inserter(num.top(),num.top().begin()));
 				}
 
 				}
@@ -126,49 +200,57 @@ set<mail*,id_compare> evaluate(vector<string> &post){
 }
 void query(string &condition){
 	int i=0;
+	TOLOW(condition);
 	/*cout << condition << endl;
 	auto r=topost2(condition);*/
 	//for(auto &k:r)cout << k <<' ';
+	//cout <<condition<<"newline?";
+	if(condition.back()=='\n' || condition.back()=='\r')condition.pop_back();
+	//cout <<condition<<"newline?";
 	string f,t;
 	unsigned long long L=0,R=ULLONG_MAX;
 	vector<string> ex;
 	//cout << endl;
 	while( i < condition.length() ){
-		if(condition[i]==' '){i++;continue;}
+		if(condition[i]==' '||condition[i]=='\n'){i++;continue;}
 		if (condition[i]=='-'){
 			if(condition[i+1]=='f'){
-				i+=2;//"
+				i+=3;//"
 				while(condition[i]!='\"'){
 					f.push_back(condition[i]);
 					i++;
 				}
 			}
 			else if (condition[i+1]=='t'){
-				i+=2;//"
+				i+=3;//"
 				while(condition[i]!='\"'){
 					t.push_back(condition[i]);
 					i++;
 				}
 			}
-			else if (condition[i+1]=='d'){
+			else if (condition[i+1]=='d'&&(condition[i+2]=='~' ||isdigit(condition[i+2]))){
 					i+=2;
 
-					if(condition[i]!='~'){
+					if(isalnum(condition[i])){
 						sscanf(condition.c_str()+i,"%llu",&L);
 						while(condition[i]!='~')i++;
 					}
 					i++;
-					if(condition[i]!=' ')
+					if(condition[i]!=' '&&condition[i]!='\0' && condition[i]!='\n')
 							sscanf(condition.c_str()+i,"%llu",&R);
 			}
 			
 		}
 		else{
-			ex=topost2(string(condition.begin()+i,condition.end()));
+			int j=i;
+			while(condition[j]!=' ' && j<condition.length())j++;
+			ex=topost2(string(condition.begin()+i,condition.begin()+j));
 		}
 		while(i<condition.length() && condition[i]!=' ')i++;
 		i++;
 	}
+	//cout << ex.size()<<"**" ;
+	//if(R!=ULLONG_MAX)cout <<"@@";
 	/*cout <<"f" <<f <<endl;
 	cout <<"t" <<t <<endl;
 	cout <<"L" <<L <<endl;
@@ -177,7 +259,8 @@ void query(string &condition){
 	cout <<endl;
 	cout <<"okhere1\n";*/
 	set<mail*,id_compare> ret;
-	if(ex.size()!=0){ret=evaluate(ex);
+	if(ex.size()!=0){
+		ret=evaluate(ex);
 		int n=0;
 		for(auto k:ret){
 			if(!k->currently_valid)continue;
@@ -193,6 +276,7 @@ void query(string &condition){
 	}
 	else{
 		int n=0;
+		//cout <<"no ex" << f <<"f"<<t;
 		for(auto k:allid){
 			if(!k->currently_valid)continue;
 			if(f!="" && k->from!=f)continue;
@@ -215,18 +299,27 @@ int main(){
 	m_vec.reserve(10000);*/
 	// cout <<"foog\n";
 	int mailnum=0;
+	int j=0;
 	while (cin >> input){
 		//getline(cin,input);
 		//cout << convert_date(input.c_str());
-		// cout <<input <<"why"<<endl;
+		//cout << ++j <<"  "<<endl;
 		if(input=="add"){
 			mail* t=new mail();//testing 
 			 // cout <<"goin";
-			bool state=add(t);
+			int state=add(t);
 			 // cout <<"??";
 			if(!state){
 				delete(t);
 				cout <<"-\n";
+			}
+			else if(state==2){
+				auto z=container.find(t->id)->second;
+				delete(t);
+				z->currently_valid=1;
+				cout <<++mailnum <<endl;
+				lengthset.insert(z);
+				allid.insert(z);
 			}
 			else{
 				container.insert(make_pair(t->id,t));
@@ -259,6 +352,7 @@ int main(){
 			else{
 				auto iter=lengthset.begin();
 				if(iter!=lengthset.end()){
+					//cout <<"l\n";
 					cout << (*iter)->id <<" "<< (*iter)->length <<endl;
 				}
 			}

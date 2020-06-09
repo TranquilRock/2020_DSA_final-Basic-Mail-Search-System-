@@ -6,11 +6,12 @@ unordered_map <string,int> prec;
 void set_precedence();
 
 vector<string> topost2(const string &in){
+	//cout << in <<" this";
 	stack<string> op;
 	vector<string> post;
 	set_precedence();
 	for(int i=0;i<in.length();i++){
-		if(in[i]==' ')continue;
+		if(in[i]==' ' || in[i]=='\n')continue;
 		if(isdigit(in[i]) || isalpha(in[i])){
 			int j=i+1;
 			while (isdigit(in[j]) || isalpha(in[j]))j++;

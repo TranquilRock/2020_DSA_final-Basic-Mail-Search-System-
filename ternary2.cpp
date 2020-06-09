@@ -39,13 +39,12 @@ struct Node
 //     temp->left = temp->eq = temp->right = NULL; 
 //     return temp; 
 // } 
-extern int sizeabc=0;
 // Function to insert a new word in a Ternary Search Tree 
 void TST_insert(struct Node** root,const char *word ,mail * M) 
 {   
     while(*word){
 
-        if ((*root)==NULL) {(*root) = new Node(*word);sizeabc++;}
+        if ((*root)==NULL) {(*root) = new Node(*word);}
         if ((*word) < (*root)->data) 
             root=&(*root)->left; 
 
