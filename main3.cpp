@@ -1,4 +1,11 @@
-#include<bits/stdc++.h>
+#include<iostream>
+#include<climits>
+#include<algorithm>
+#include<vector>
+#include<set>
+#include<map>
+#include<string>
+//#include <unistd.h>
 #include "ternary2.cpp"
 #include "expression.cpp"
 using namespace std;
@@ -26,8 +33,11 @@ void TOLOW(char *s){
 		s++;
 	}
 }
+//map <int ,string> path_unique;
+
 int add(struct mail *M){
 	char path[32];
+	//string path;
 	cin >> path;
 	// cout <<"WTF"<<path <<"asd"<<'\n' <<"fu";
 	fstream f;
@@ -51,11 +61,14 @@ int add(struct mail *M){
 	
 	M->date=convert_date(trash);
 	//convert date to number
-	// cout<<"date " << M->date << endl;
+	//cout<<"date " << M->date <<' ';//<< endl;
 
 	f >>trash;//ID
 	f >>M->id;
-	
+	/*if(path_unique.find(M->id)!=path_unique.end()){
+		assert(path_unique[M->id]==path);
+	}
+	else path_unique.insert(make_pair(M->id,path));*/
 	//for(int i=M->id;i!=0;i/=10)M->length++;
 	// cout <<"id "<< M->id << endl;
 	auto z=container.find(M->id);
@@ -67,9 +80,10 @@ int add(struct mail *M){
 	}
 	f >>trash;
 	f.ignore();
-	getline(f,M->subject);
-	TOLOW(M->subject);
-	// cout <<"subject "<< M->subject<<endl;
+	string splitsb;
+	getline(f,splitsb);
+	TOLOW(splitsb);
+	//cout <<"subject "<< M->subject<<endl;
 
 	f >>trash;//To
 	f >>M->to;
@@ -82,13 +96,14 @@ int add(struct mail *M){
 	//TST_insert(&TST_root,M->from.c_str(),M);
 	//TST_insert(&TST_root,M->to.c_str(),M);
 
-	char splitsb[128];
-	strncpy(splitsb,M->subject.c_str(),128);
-	for(int i=0;i<M->subject.length();i++){
+	//split subject
+	//strncpy(splitsb,M->subject.c_str(),128);
+	for(int i=0;i<splitsb.length();i++){
 		int j=i;
-		while(splitsb[j]!=' ' && splitsb[j]!='\0')++j;
+		while(isalnum(splitsb[j]))++j;
+		if(j==i)continue;
 		splitsb[j]='\0';
-		TST_insert(&TST_root,splitsb+i,M);
+		TST_insert(&TST_root,splitsb.c_str()+i,M);
 		//M->length+=j-i;
 		i=j;
 	}
@@ -105,6 +120,8 @@ int add(struct mail *M){
 				//cout << "inserted " << inserting_element << endl;
 				// M->content.insert(inserting_element);
 				TST_insert(&TST_root,inserting_element.c_str(),M);
+				//assert(searchTST(TST_root,inserting_element.c_str())!=NULL);
+				//assert(searchTST(TST_root,inserting_element.c_str())->TST_set.find(M)!=searchTST(TST_root,inserting_element.c_str())->TST_set.end());
 				M->length+=inserting_element.length();
 			}
 			i=++j;
@@ -132,6 +149,21 @@ void uni(set<mail*,id_compare>&a,set<mail*,id_compare>&b,set<mail*,id_compare>&c
 	}
 	return;
 }
+/*void exor(set<mail*,id_compare>&a,set<mail*,id_compare>&b,set<mail*,id_compare>&c){
+	auto i=a.begin();
+	auto j=b.begin();
+	while(i!=a.end() && j!=b.end()){
+		if((*i)->id > (*j)->id){
+			c.insert(*j);
+			j++;
+		}
+		else if((*i)->id < (*j)->id){
+			c.insert(*i);
+			i++;
+		}
+		else {i++,j++;}
+	}
+}*/
 void diff(set<mail*,id_compare>&a,set<mail*,id_compare>&b,set<mail*,id_compare>&c){
 	// a/b
 	c=a;
@@ -141,8 +173,8 @@ void diff(set<mail*,id_compare>&a,set<mail*,id_compare>&b,set<mail*,id_compare>&
 }
 set<mail*,id_compare> evaluate(vector<string> &post){
 	stack< set<mail*,id_compare> >num;
-	//for(auto k:post)cout << k <<"_ ";
-	//cout << "fuck";
+	/*for(auto k:post)cout << k <<" ";
+	cout << "***post";*/
 	for(string &seg:post){
 		//assert(seg!="");
 		if(seg=="")continue;
@@ -185,6 +217,7 @@ set<mail*,id_compare> evaluate(vector<string> &post){
 				else {
 					num.push(set<mail*,id_compare>());
 					uni(a,b,num.top());
+					//exor(a,b,num.top());
 					//set_union(a.begin(),a.end(),b.begin(),b.end(),std::inserter(num.top(),num.top().begin()));
 				}
 
@@ -202,12 +235,14 @@ void query(string &condition){
 	int i=0;
 	TOLOW(condition);
 	/*cout << condition << endl;
-	auto r=topost2(condition);*/
-	//for(auto &k:r)cout << k <<' ';
+	auto r=topost2(condition);
+	for(auto &k:r)cout << k <<' ';
+	cout <<"***post"<<endl;*/
 	//cout <<condition<<"newline?";
-	if(condition.back()=='\n' || condition.back()=='\r')condition.pop_back();
+	while(condition.back()=='\n' || condition.back()=='\r' ||condition.back()==' ')condition.pop_back();
 	//cout <<condition<<"newline?";
 	string f,t;
+	bool hasf=0,hast=0,hasL=0,hasR=0;
 	unsigned long long L=0,R=ULLONG_MAX;
 	vector<string> ex;
 	//cout << endl;
@@ -216,6 +251,7 @@ void query(string &condition){
 		if (condition[i]=='-'){
 			if(condition[i+1]=='f'){
 				i+=3;//"
+				hasf=1;
 				while(condition[i]!='\"'){
 					f.push_back(condition[i]);
 					i++;
@@ -223,6 +259,7 @@ void query(string &condition){
 			}
 			else if (condition[i+1]=='t'){
 				i+=3;//"
+				hast=1;
 				while(condition[i]!='\"'){
 					t.push_back(condition[i]);
 					i++;
@@ -231,20 +268,23 @@ void query(string &condition){
 			else if (condition[i+1]=='d'&&(condition[i+2]=='~' ||isdigit(condition[i+2]))){
 					i+=2;
 
-					if(isalnum(condition[i])){
+					if(isdigit(condition[i])){
 						sscanf(condition.c_str()+i,"%llu",&L);
+						hasL=1;
 						while(condition[i]!='~')i++;
 					}
 					i++;
-					if(condition[i]!=' '&&condition[i]!='\0' && condition[i]!='\n')
+					if(isdigit(condition[i])){
 							sscanf(condition.c_str()+i,"%llu",&R);
+							hasR=1;
+						}
 			}
 			
 		}
 		else{
 			int j=i;
 			while(condition[j]!=' ' && j<condition.length())j++;
-			ex=topost2(string(condition.begin()+i,condition.begin()+j));
+			topost2(string(condition.begin()+i,condition.begin()+j),ex);
 		}
 		while(i<condition.length() && condition[i]!=' ')i++;
 		i++;
@@ -258,16 +298,18 @@ void query(string &condition){
 	/*for(auto&k:ex)cout << k <<" ";
 	cout <<endl;
 	cout <<"okhere1\n";*/
+	/*cout << hasf << hast <<hasL <<hasR <<" has";
+	cout <<" L "<< L <<" R "<<R<<" ";*/
 	set<mail*,id_compare> ret;
 	if(ex.size()!=0){
 		ret=evaluate(ex);
 		int n=0;
 		for(auto k:ret){
 			if(!k->currently_valid)continue;
-			if(f!="" && k->from!=f)continue;
-			if(t!="" && k->to!=t)continue;
-			if(L!=0 && k->date <L)continue;
-			if(R!=ULLONG_MAX && k->date>R)continue;
+			if(hasf && k->from!=f)continue;
+			if(hast && k->to!=t)continue;
+			if(hasL && k->date <L)continue;
+			if(hasR && k->date>R)continue;
 			if(n++)cout <<' ';
 			cout << k->id;
 		}
@@ -279,10 +321,10 @@ void query(string &condition){
 		//cout <<"no ex" << f <<"f"<<t;
 		for(auto k:allid){
 			if(!k->currently_valid)continue;
-			if(f!="" && k->from!=f)continue;
-			if(t!="" && k->to!=t)continue;
-			if(L!=0 && k->date <L)continue;
-			if(R!=ULLONG_MAX && k->date>R)continue;
+			if(hasf && k->from!=f)continue;
+			if(hast && k->to!=t)continue;
+			if(hasL && k->date <L)continue;
+			if(hasR && k->date>R)continue;
 			if(n++)cout <<' ';
 			cout << k->id;
 		}
@@ -292,20 +334,23 @@ void query(string &condition){
 }
 
 int main(){
-	//ios_base::sync_with_stdio(0);
-	//cin.tie(0);
+	ios_base::sync_with_stdio(0);
+	cin.tie(0);
 	string input;
 	/*vector<mail*> m_vec;
 	m_vec.reserve(10000);*/
 	// cout <<"foog\n";
+	//sleep(4);
 	int mailnum=0;
-	int j=0;
+	set_precedence();
+	int command=0;
 	while (cin >> input){
 		//getline(cin,input);
 		//cout << convert_date(input.c_str());
 		//cout << ++j <<"  "<<endl;
+		//if(++command==3279){cout <<"-\n";return 0;}
 		if(input=="add"){
-			mail* t=new mail();//testing 
+			mail* t=new mail();
 			 // cout <<"goin";
 			int state=add(t);
 			 // cout <<"??";
@@ -346,16 +391,12 @@ int main(){
 			}
 		}
 		else if(input == "longest"){
-			if(lengthset.size()==0){
-				cout <<"-\n";
+			auto iter=lengthset.begin();
+			if(iter!=lengthset.end()){
+				//cout <<"l\n";
+				cout << (*iter)->id <<" "<< (*iter)->length <<endl;
 			}
-			else{
-				auto iter=lengthset.begin();
-				if(iter!=lengthset.end()){
-					//cout <<"l\n";
-					cout << (*iter)->id <<" "<< (*iter)->length <<endl;
-				}
-			}
+			else cout <<"-\n";
 		}
 		else if (input=="query"){
 			getline(cin,input);

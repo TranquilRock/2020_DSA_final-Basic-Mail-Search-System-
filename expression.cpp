@@ -5,16 +5,16 @@ unordered_map <string,int> prec;
 
 void set_precedence();
 
-vector<string> topost2(const string &in){
+void topost2(const string &in,vector<string>&post){
 	//cout << in <<" this";
 	stack<string> op;
-	vector<string> post;
-	set_precedence();
+	//vector<string> post;
+	
 	for(int i=0;i<in.length();i++){
 		if(in[i]==' ' || in[i]=='\n')continue;
-		if(isdigit(in[i]) || isalpha(in[i])){
+		if(isalnum(in[i])){
 			int j=i+1;
-			while (isdigit(in[j]) || isalpha(in[j]))j++;
+			while (isalnum(in[j]) )j++;
 			post.push_back(string(in.begin()+i,in.begin()+j));
 			i=j-1;
 		}
@@ -35,19 +35,19 @@ vector<string> topost2(const string &in){
 			//cout <<temp <<"???\n";
 			//if ( (in[i]=='-' || in[i]=='+') && (i>0 && !isdigit(in[i-1])) )temp='u'+in[i];
 			//cout << in[i]<<endl;
-			switch (in[i]){
-				case '&':
-					if (i+1<in.length() && in[i+1]==in[i]){temp="&&";i++;}
-					break;
-				case '|':
-					if (i+1<in.length() && in[i+1]==in[i]){temp="||";i++;}
-					break;
-				case '!':
-					if (in[i+1]=='='){temp="!=";i++;}
-					break;
-				default :
-					break;
-				};
+			// switch (in[i]){
+			// 	case '&':
+			// 		if (i+1<in.length() && in[i+1]==in[i]){temp="&";i++;}
+			// 		break;
+			// 	case '|':
+			// 		if (i+1<in.length() && in[i+1]==in[i]){temp="|";i++;}
+			// 		break;
+			// 	case '!':
+			// 		if (in[i+1]=='='){temp="!=";i++;}
+			// 		break;
+			// 	default :
+			// 		break;
+			// 	};
 			//assert(prec.find(temp)!=prec.end());
 			while (!op.empty() && op.top()!="(" &&prec[op.top()] <= prec[temp] && prec[temp]>1){
 				post.push_back(op.top());
@@ -62,7 +62,7 @@ vector<string> topost2(const string &in){
 		post.push_back(op.top());
 		op.pop();
 	}
-	return post;
+	return ;
 }
 
 
@@ -86,7 +86,7 @@ vector<string> topost2(const string &in){
 // 	return 0;
 // }
 void set_precedence(){
-	//prec["("]=prec[")"]=0;
+	prec["("]=prec[")"]=0;
 	prec["!"]=1;
 	// prec["~"]=prec["u+"]=prec["u-"]=1;
 	// prec["*"]=prec["/"]=prec["%"]=2;
@@ -116,4 +116,3 @@ void set_precedence(){
 ||
 
 */
-

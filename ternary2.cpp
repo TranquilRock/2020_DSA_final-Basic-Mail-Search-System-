@@ -4,7 +4,8 @@
 using namespace std;
 // A node of ternary search tree
 struct mail{
-    string from,to,subject;
+    string from,to;
+    //string subject;
     int id,length;
     unsigned long long date;
     bool currently_valid;
@@ -43,7 +44,8 @@ struct Node
 void TST_insert(struct Node** root,const char *word ,mail * M) 
 {   
     while(*word){
-
+        //assert((!isalpha(*word))||islower(*word));
+        //if(!isalnum(*word))cout <<"WTF" <<*word <<"WTF";
         if ((*root)==NULL) {(*root) = new Node(*word);}
         if ((*word) < (*root)->data) 
             root=&(*root)->left; 
@@ -54,7 +56,7 @@ void TST_insert(struct Node** root,const char *word ,mail * M)
         else
         { 
             if (*(word+1)) 
-                (root)=&(*root)->eq;
+                (root)=&((*root)->eq);
             else{   
                 //cout <<"fuckme\n";
                 (*root)->TST_set.insert(M); 
@@ -68,6 +70,7 @@ Node* searchTST(struct Node *root, const char *word)
 { 
     if(*word==0)return NULL;
     while(*word){
+
         if (!root) 
             return NULL;
         if (*word < (root)->data) 
@@ -98,7 +101,11 @@ void traverseTSTUtil(struct Node* root, char* buffer, int depth)
         if (root->TST_set.size()!=0) 
         { 
             buffer[depth+1] = '\0'; 
-            printf( "%s\n", buffer); 
+            cout << buffer <<" :";
+            for(auto k:root->TST_set){
+                cout << k->id <<" ";
+            }
+            cout <<endl;
         } 
   
         // Traverse the subtree using equal pointer (middle subtree) 
